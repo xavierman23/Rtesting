@@ -1,0 +1,146 @@
+---
+title: "Strategies Testing"
+author: "Logan"
+date: "`r Sys.Date()`"
+output: pdf_document
+urlcolor: blue
+---
+<!-- Formatting from Dr. Gordan Zitkovic.-->
+```{r echo=FALSE, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.align="center",
+  fig.pos="t",
+  strip.white = TRUE
+)
+```
+
+---
+## Beginning Problems
+## Problem 1, Consider a 20-sided die, what is the expected number of rolls before obtaining a minimum value of X:
+
+Using Monte-Carlo Methods we can find that the average number is about 20 rolls for a minimum of 20, about 10 for a minimum of 19, and 6.67 for a minimum of 18. Next we should try to derive these solutions analytically.
+```{r}
+
+possible = seq(1:20)
+
+diceroll <- function(){
+  return(sample(possible, 1, replace = T))
+}
+  
+timeTaken <- function(minVal){
+  time = 0
+  inputs = 0
+  while (inputs < minVal) {
+    time = time + 1
+    inputs = diceroll()
+    #print(inputs)
+  }
+  return(time)
+}
+
+
+options = seq(1:10000)
+#options2 = seq(1:10000)
+#options3 = seq(1:10000)
+
+for (i in options) {
+  options[i] = timeTaken(17)
+  #options2[i] = timeTaken(19)
+  #options3[i] = timeTaken(18)
+}
+#hist(options, probability = T, breaks= 50)
+print("For a minimum of 20:")
+mean(options)
+#print("For a minimum of 19:")
+#mean(options2)
+#print("For a minimum of 18:")
+#mean(options3)
+
+```
+
+## Analytically,
+Consider a fair 20-sided die. The probability, $p = \frac{1}{20}$, of obtaining any side. The time taken to reach a certain value can then be modeled using $T_{20}$.
+
+$$P[T_{20} = t] = \frac{1}{20}(\frac{19}{20})^{t-1}$$
+Thus, the expected value of $T_{20}$ is the following infinite sum.
+$$E[T_{20}] = 1(\frac{1}{20}) + 2(\frac{1}{20})(\frac{19}{20})+3(\frac{1}{20})(\frac{19}{20})^{2}+4(\frac{1}{20})(\frac{19}{20})^{3}... $$
+Note that this is an increasing geometric series with $r = \frac{19}{20}$,
+
+$$ E[T_{20}] = \sum_{t=1}^{\infty}[t(\frac{1}{20})(\frac{19}{20})^{t-1}] = a $$
+
+Now consider,
+
+$$ \frac{19}{20}E[T_{20}] = \sum_{t=1}^{\infty}[t(\frac{1}{20})(\frac{19}{20})^{t}] $$
+Thus, $$ \frac{1}{20}a = a - \frac{19}{20}a $$ is a geometric infinite sum after doing a little algebra.
+$$ \frac{1}{20}E[T_{20}] =  \sum_{t=1}^{\infty}[t(\frac{1}{20})(\frac{19}{20})^{t-1}] - \sum_{t=1}^{\infty}[t(\frac{1}{20})(\frac{19}{20})^{t}] = \sum_{t=1}^{\infty}[(\frac{1}{20})(\frac{19}{20})^{t-1}] $$
+
+This is a closed form sum:
+$$\frac{1}{20}E[T_{20}] = \frac{\frac{1}{20}}{1-\frac{19}{20}}=\frac{\frac{1}{20}}{\frac{1}{20}}$$
+Thus, we find that $E[T_{20}] = 20 $
+We then find that the general formula for the $P[X \geq a]E[T_X] = \frac{P[X \geq a]}{1-P[X<a]}$
+This may also be written as:
+$$E[T_{X}] = \frac{1}{P[X \geq x]} $$
+Thus we see that $E[T_{19}] = 10$, $E[T_{18}] = \frac{20}{3} \approx 6.66$, $E[T_{17}] = 5$
+So, the Expected number of rolls is equal to the inverse of the probability of obtaining those rolls.
+
+I now wonder if that can be said about any sized dice and any probability dice.
+Theoretically the math should follow a similar written proof, but may we find these results through monte-carlo?
+
+```{r}
+
+
+
+diceroll <- function(possible){
+  return(sample(possible, 1, replace = T))
+}
+  
+timeTaken2 <- function(minVal, possible){
+  time = 0
+  inputs = 0
+  while (inputs < minVal) {
+    time = time + 1
+    inputs = diceroll(possible)
+    #print(inputs)
+  }
+  return(time)
+}
+
+meanRollsBasicDie <- function(sides, minVal, numberOfTimes){
+  options = seq(1:numberOfTimes)
+  possible = seq(1:sides)
+  for (i in options){
+    options[i] = timeTaken2(minVal, possible)
+  }
+  mean(options)
+  
+}
+
+meanRollsBasicDie(10, 9, 1000)
+
+```
+
+Using these defined functions, let's consider a fair 100-sided die. According to our rule, the number of rolls it should take to obtain at least a 100 is $E[T_{[100,100]}] = 100$, the number of rolls to obtain at least an 91 is $E[T_{[100,91]}] = 10$, and finally at least a 51 is $ E[T_{[100,51]}] = 2 $
+```{r}
+meanRollsBasicDie(100, 100, 1000)
+meanRollsBasicDie(100, 91, 1000)
+meanRollsBasicDie(100, 51, 1000)
+```
+Now, consider other sided dice, we may use a 1000 sided die, 2 sided coin, or we may attempt to vary the probability vector of the sampling.
+
+```{r}
+meanRollsBasicDie(1000, 501, 1000)
+meanRollsBasicDie(2, 2, 1000)
+meanRollsBasicDie(6, 4, 1000)
+
+```
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
